@@ -1,0 +1,231 @@
+Deze file hoort bij het programma SPREDIT.PRG 
+en kan met dat programma gelezen worden. 
+  
+  
+  SPREDIT.GFA is geschreven door E.Martin in 1988 
+  met de GFA-basis interpreter versie 3.03. 
+  
+  In deze tekst-file kun je lezen hoe het programma 
+  SPREDIT.GFA grotendeels werkt. Je kunt de file 
+  scrollen door de LINKERmuistoets in te drukken. 
+  Bij het indrukken van de rechtermuistoets kom 
+  je weer in het 'gewone' programma terecht. 
+  
+Van alle menu opties wordt uitgelegd wat ze doen en hoe 
+ze werken. Ook wordt er wat algemene informatie gegeven. 
+We beginnen natuurlijk bij de eerste menu optie: 
+  
+  DESK: 
+  info. 
+Met info krijg je de naam van de schrijver,het jaar waarin 
+het geschreven is enz. Je kunt nu weer terugkeren of 
+"MEM INFO" kiezen.Dan krijg je informatie over het gebruikte 
+en het vrije aantal sprites.Met 'sprites' wordt een 
+verzameling van allerlei verschillende 'sprites' bedoeld, 
+dus ook bijvoorbeeld de muis,een vulpatroon enz. 
+  
+  accessoires. 
+Omdat dit programma met een pull-down menu werkt, is het 
+mogelijk om allerlei accessoires in het programma te 
+gebruiken. 
+  
+  FILE: 
+  bewaar. (sprite) 
+Hiermee kun je een getekende sprite in het geheugen bewaren 
+zodat je een andere sprite kunt gaan tekenen. Als je dit doet 
+wordt er een naam gevraagd. Deze naam moet beginnen met een 
+letter en mag gevolgd worden door letters,cijfers of de '_'. 
+Als je hier niet aan voldoet wordt de sprite niet bewaard 
+en het eventueel al in het geheugen zijnde sprite blijft 
+ongewijzigd. (Je kunt het dus als een soort CANCEL gebruiken.) 
+Ook mag de naam niet langer zijn dan 14 letters. 
+Zolang het geheugen niet vol is, is er een 'lege' plaats, 
+die je ook kunt zien als je net in het programma bent 
+gekomen. Als je hierin een sprite bewaard wordt er vanzelf 
+een nieuwe 'lege' plaats gemaakt. 
+De bewaar optie kun je ook activeren door funktietoets F1 in 
+te drukken. Zo zijn er nog negen andere opties die met 
+de funktie toetsen zijn te activeren. Achter de opties in 
+de pull-down menu's kun je zien welke funktietoets bij welke 
+optie hoort. 
+  
+  laad. (sprite) 
+Met laad kun je een bewaarde sprite weer laden. Met het NAAM- 
+venster kun je de naam opzoeken en met laad wordt de inhoud 
+in het EDITOR-venster gecopieerd. Omdat dit programma geheel 
+Nederlandstalig is, is het bekende SAVE en LOAD vervangen 
+door (je ziet het al) bewaar en laad. 
+  
+  wis. 
+Met wis kun je een bewaarde sprite weer wissen. Doe je dit 
+per ongeluk, dan is hij (gelukkig) weer te laden van de 
+'lege' sprite. 
+  
+  bewaar. (file) 
+Met de tweede bewaar-optie kun je alle bewaarde sprites naar 
+disk schrijven. Hierbij worden er drie files gemaakt (jawel!). 
+In de .DFN file wordt alles geschreven, zodat je een volgende 
+keer weer verder kunt 'editeren'. In de .LST file wordt een 
+klein GFA-programmaatje geschreven die je met MERGE kunt 
+laden. Het is dan mogelijk in je programma de sprite-data 
+te laden (uit de derde, .SPR file). Je kunt dan elk zelf 
+geediteerde sprite in je programma gebruiken. 
+Alle vier de in GFA-basic mogelijke sprites kunnen gebruikt 
+worden. Zoals al geschreven moet de term 'sprite' erg ruim 
+genomen worden, de mogelijke sprites zijn namelijk: 
+  
+ * De 'echte' sprite 
+ * De muis 
+ * Het vulpatroon 
+ * Het GFA-'block' 
+  
+De 'echte' sprite is eigenlijk het zelfde als de muis, alleen 
+kan hij door een programma bestuurd worden, itt de muis, die 
+door de muis (het apparaatje) bestuurd wordt. 
+Het vulpatroon kun je gebruiken om vlakken van een bepaald 
+patroon te voorzien (vergeet niet dat er al zo'n 36 standaard 
+voorradig zijn). 
+Het GFA-block wordt in een string$ opgeborgen (net als de 
+andere sprites) en kan overal op het scherm neergezet worden. 
+Dit kan op veel verschillende manieren, met verschillende 
+modi. Het grote voordeel van deze blocks is ook dat ze 
+verschillende formaten kunnen hebben. 
+Het activeren van de sprites in een programma gaat bij 
+  
+ de sprite           SPRITE naam$ of SPRITE naam$,x,y 
+ de muis             DEFMOUSE naam$ 
+ het vulpatroon      DEFFILL naam$ 
+ het GFA-block       PUT x,y,naam$ of PUT x,y,naam$,modus 
+  
+Hierbij stelt naam$ de string$ met sprite-informatie voor, 
+x en y de coordinaten van het te plaatsen sprite en modus 
+een getal van 0 t/m 15 die de manier bepaald hoe het block 
+op het scherm moet komen. 
+  laad. (file) 
+Met de tweede laad optie kun je een bewaarde .DFN file 
+laden om weer te gebruiken. 
+  help. 
+Met deze optie kun je deze tekst-file lezen. 
+  stop. 
+Hiermee kun je het programma beeindigen. 
+  
+  TYPE: 
+  sprite. 
+  muis. 
+  vulling. 
+Hiermee kun je kiezen of je een sprite, muis of vulling kunt 
+gaan tekenen 
+  
+  8x8. 
+  ... 
+  32x32. 
+Hier kun je het formaat van een GFA block bepalen. Let er wel 
+op dat de formaten 8x8 en 8x16 niet met het PUT-commando 
+gebruikt kunnen worden, omdat de breedte minimaal twee bytes 
+moet zijn. Het is dan ook ter volledigheid opgenomen, en kan 
+misschien op andere manieren gebruikt worden. 
+  
+  masker. 
+Met deze optie kun je kiezen of je een masker wilt. Dit kan 
+alleen bij het block (bij de andere drie types staat dit immers 
+al vast). Een masker is handig omdat de sprite dan duidelijker 
+is en je kunt hem dan ook op een zwarte ondergrond zien. 
+Denk maak aan de witte rand om de pijl van de muis op een 
+zwarte ondergrond. Het masker kun je tekenen door gebruik te 
+maken van de rechtermuistoets. De betreffende blokjes worden 
+dan grijs. De figuur zelf kun je met de linkermuistoets 
+tekenen. De blokjes worden dan zwart. 
+  
+  BEWEEG: 
+  rechts. 
+  links. 
+  omlaag. 
+  omhoog. 
+Hiermee kun je de sprite in het EDITOR-venster verschuiven in 
+de gewenste richtingen. 
+  
+  vertikaal. 
+  horizontaal. 
+  rechtsom. 
+  linksom. 
+Hiermee kun je de sprite draaien. Kies vertikaal en horizontaal 
+om hem om zijn as te laten draaien, en rechtsom en linksom om 
+hem respectievelijk met en tegen de wijzers van de klok te 
+laten draaien. 
+  
+  TEKEN: 
+  lijn. 
+Na het kiezen van deze optie kun je in het EDITOR-venster twee 
+punten kiezen (door die aan te klikken) waarna er een lijn 
+tussen getrokken wordt. 
+  
+  wis blok. 
+Na het ingeven van de linkerbovenhoek en de rechterbeneden- 
+hoek, wordt het ingesloten blok gewist. 
+  
+  inv blok. 
+Met deze optie kun je een blok inverteren. De kleuren van 
+het getekende figuur en het masker worden verwisseld. 
+Het masker moet natuurlijk wel 'aanstaan'. 
+Ook hier wordt om twee punten gevraagd. Voor alle duide- 
+lijkheid kun je in de menubalk lezen welk punt gevraagd 
+wordt. Dit gebeurt trouwens bij alle opties die punten 
+vragen. 
+  
+  copy blok. 
+Hier kun je een blok aangeven (het originele blok), en 
+de linkerbovenhoek van het doelblok, waarnaar het 
+originele blok dan gecopieerd wordt. 
+  
+  actie-punt. 
+Na het kiezen van deze optie kun je het actie-punt geven. 
+Het actie-punt komt te liggen op het punt waar de sprite 
+is neergezet. Dit klink vast te ingewikkeld, maar 
+probeer maar wat waarden en kijk wat er gebeurt als je 
+de sprite tegen de randen van het beeldscherm duwt. 
+Alleen de 'echte' sprite en de muis maken hiervan 
+gebruikt. 
+  
+  auto-masker. 
+Hiermee wordt om een getekend figuur een randje getekend. 
+Dit randje is het masker en kan dus alleen gebruikt 
+worden als hij ook 'aanstaat'. 
+  
+  TEST: 
+  test. 
+Hiermee kun je je sprite 'in het echt' zien. In het 
+midden van het scherm wordt een wit en een zwart 
+vierkant getekend, zodat je je sprite ook op de 
+desbetreffende vlakken kunt bekijken. Als je bezig 
+was aan een vulpatroon krijg je het patroon te zien. 
+Sprites kun je ook bekijken door de close-box van 
+een venster aan te klikken, maar er wordt dan geen 
+wit en zwart vlak getekend. Je kunt op deze manier 
+ook de sprites van het NAAM-venster snel bekijken. 
+(Als je het nog niet wist: de close-box is het 
+vierkantje linksboven in het venster.) 
+Bij beide manieren kun je weer in het normale 
+programma komen door de rechter muistoets in te 
+drukken. 
+  
+  
+  
+   SPREDIT.GFA is geschreven door Edwin.J.Martin 
+   en is ingezonden voor de progammeerwedstrijd 
+   van MARKO software, November 1988. 
+  
+   Het adres van de schrijver is: 
+  
+   2e Kostverlorenkade 113 (2) 
+   1053 SB   Amsterdam 
+   tel. 020-120503 
+  
+  
+  
+              *** Dit is het einde van deze file. *** 
+  
+  
+  
+  
+  
+  

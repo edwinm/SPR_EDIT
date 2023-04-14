@@ -1,0 +1,1462 @@
+'              ***    SPRITE-EDITOR    ***
+$ %0
+$ S&
+$ E#
+$ P>
+$ F<
+GOSUB init
+DO
+  start:
+  event&=EVNT_MULTI(&X10101,1,1,1,0,box_x&,box_y&,box_b&,box_h&,0,0,0,0,0,V:msg&(1),0,mx&,my&,mk&,k_state&,key&,clicks&)
+  IF event& AND &X10000
+    IF msg&(1)=10
+      GOSUB doe_menu
+    ELSE
+      GOSUB doe_vensters
+    ENDIF
+  ELSE IF event& AND &X100
+    GOSUB in_box
+  ENDIF
+  IF event& AND &X1
+    GOSUB doe_toets
+  ENDIF
+LOOP
+'                           PROCEDURES:
+> PROCEDURE init
+  ON ERROR GOSUB foutje
+  LET menu&=0 !RSC_TREE
+  LET ednaam&=1 !RSC_TREE
+  LET infobox&=2 !RSC_TREE
+  LET info&=12 !Obj in #0
+  LET spbicn&=21 !Obj in #0
+  LET nieuw&=22 !Obj in #0
+  LET flaad&=23 !Obj in #0
+  LET merge&=24 !Obj in #0
+  LET fbewaar&=25 !Obj in #0
+  LET bspicn&=27 !Obj in #0
+  LET help&=29 !Obj in #0
+  LET undo&=30 !Obj in #0
+  LET meminfo&=31 !Obj in #0
+  LET stop&=32 !Obj in #0
+  LET spbewaar&=34 !Obj in #0
+  LET splaad&=35 !Obj in #0
+  LET spwis&=36 !Obj in #0
+  LET test&=38 !Obj in #0
+  LET sprite&=41 !Obj in #0
+  LET muis&=42 !Obj in #0
+  LET vulling&=43 !Obj in #0
+  LET icon&=44 !Obj in #0
+  LET x8&=46 !Obj in #0
+  LET x16&=47 !Obj in #0
+  LET x32&=48 !Obj in #0
+  LET x48&=49 !Obj in #0
+  LET x64&=50 !Obj in #0
+  LET masker&=52 !Obj in #0
+  LET y8&=53 !Obj in #0
+  LET y16&=54 !Obj in #0
+  LET y32&=55 !Obj in #0
+  LET y48&=56 !Obj in #0
+  LET y64&=57 !Obj in #0
+  LET rechts&=60 !Obj in #0
+  LET links&=61 !Obj in #0
+  LET omlaag&=62 !Obj in #0
+  LET omhoog&=63 !Obj in #0
+  LET vert&=65 !Obj in #0
+  LET horizon&=66 !Obj in #0
+  LET rom&=67 !Obj in #0
+  LET lom&=68 !Obj in #0
+  LET lijn&=70 !Obj in #0
+  LET vulb&=72 !Obj in #0
+  LET maskb&=73 !Obj in #0
+  LET wisb&=74 !Obj in #0
+  LET copyb&=75 !Obj in #0
+  LET invb&=76 !Obj in #0
+  LET automask&=78 !Obj in #0
+  LET actpunt&=79 !Obj in #0
+  LET zwroost&=81 !Obj in #0
+  LET witroost&=82 !Obj in #0
+  LET proost&=83 !Obj in #0
+  LET noroost&=84 !Obj in #0
+  LET edit&=1 !Obj in #1
+  LET ninfo&=2 !Obj in #1
+  '
+  '
+  DIM editor|(10),naam|(8),info|(25),help|(8)
+  DIM msg&(8),scherm|(32255),edcopy|(22916)  ! 544*337/8
+  DIM mfdb1%(8),mfdb2%(8),mfdb3%(8),par%(8)
+  DIM wind&(3),xt|(4),yt|(4),bt|(5),func|(10),no_mouse&(37)
+  size&=1024  ! 64*64/8*2
+  mfree%=(FRE(0)-35000) DIV (size&+20) ! 15000 ipv 5000
+  DIM wsprite|(size&),csprite|(size&),spr_buf|(size&)
+  DIM naam$(mfree%),sprite|(size&,mfree%),type|(mfree%)
+  DIM spmask|(mfree%),spax|(mfree%),spay|(mfree%)
+  '
+  IF XBIOS(4)<>2
+    ~FORM_ALERT(1,"[1][Alleen voor|hoge resolutie.][ OK ]")
+    EDIT
+  ENDIF
+  IF RSRC_LOAD("SPR_EDIT.RSC")=0
+    ~FORM_ALERT(1,"[1][SPR_EDIT.RSC|niet gevonden.][ EXIT ]")
+    EDIT
+  ENDIF
+  ~RSRC_GADDR(0,menu&,menu_adr%)
+  ~RSRC_GADDR(0,ednaam&,ed_adr%)
+  ~RSRC_GADDR(0,infobox&,info_adr%)
+  ~MENU_BAR(menu_adr%,1)
+  '
+  FOR i&=1 TO 10         ! nodig ?
+    func|(i&)=1
+  NEXT i&
+  '
+  ARRAYFILL no_mouse(),0
+  no_mouse&(3)=1
+  no_mouse&(5)=1
+  '
+  type_xy:
+  DATA 2,16,2,16,2,16,6,48
+  DATA 8,16,32,48,64
+  RESTORE type_xy
+  FOR i&=1 TO 4
+    READ xt|(i&),yt|(i&)
+  NEXT i&
+  FOR i&=0 TO 4
+    READ bt|(i&)
+  NEXT i&
+  '
+  ax|=0
+  ay|=0
+  bx|=1
+  by|=1
+  x|=2
+  y|=16
+  nul%=0
+  pn&=0
+  sn&=0
+  naam$(pn&)=""
+  type|(pn&)=1
+  type|=1
+  ~MENU_ICHECK(menu_adr%,sprite&,1)
+  dr&=0
+  rooster&=1
+  oldroost&=zwroost&
+  ~MENU_ICHECK(menu_adr%,zwroost&,1)
+  wsp_adr%=V:wsprite|(0)
+  csp_adr%=V:csprite|(0)
+  pakpunt|=0
+  '
+  scherm1%=XBIOS(2)
+  scherm2%=(V:scherm|(0) DIV 256+1)*256
+  '
+  mfdb1%(0)=scherm1%
+  mfdb1%(1)=640
+  mfdb1%(2)=400
+  mfdb1%(3)=40
+  mfdb1%(5)=1
+  mfdb2%(0)=scherm2%
+  mfdb2%(1)=640
+  mfdb2%(2)=400
+  mfdb2%(3)=40
+  mfdb2%(5)=1
+  mfdb3%(0)=V:edcopy|(0)
+  mfdb3%(1)=544
+  mfdb3%(2)=337
+  mfdb3%(3)=34
+  mfdb3%(5)=1
+  par%(8)=3
+  '
+  OB_X(ed_adr%,0)=400
+  OB_Y(ed_adr%,0)=100
+  wind&(1)=WIND_CREATE(&X11011,0,19,639,399)
+  wind&(2)=WIND_CREATE(&X111000001011,0,19,639,399)
+  wind&(3)=WIND_CREATE(&X1,0,19,639,399)
+  '
+  CHAR{V:editor|(0)}=" EDITOR "
+  CHAR{V:info|(0)}=""
+  CHAR{V:naam|(0)}=" SPRITE-BOX "
+  CHAR{V:help|(0)}=" HELP "
+  ~WIND_SET(wind&(1),2,CARD(SWAP(V:editor|(0))),CARD(V:editor|(0)),0,0)
+  ~WIND_SET(wind&(1),3,CARD(SWAP(V:info|(0))),CARD(V:info|(0)),0,0)
+  ~WIND_SET(wind&(2),2,CARD(SWAP(V:naam|(0))),CARD(V:naam|(0)),0,0)
+  ~WIND_SET(wind&(3),2,CARD(SWAP(V:help|(0))),CARD(V:help|(0)),0,0)
+  '
+  ~WIND_CALC(0,&X111000001011,OB_X(ed_adr%,0),OB_Y(ed_adr%,0),OB_W(ed_adr%,0),OB_H(ed_adr%,0),wx&,wy&,wb&,wh&)
+  ~WIND_OPEN(wind&(2),wx&,wy&,wb&,wh&)
+  GOSUB set_slider
+  ~WIND_OPEN(wind&(1),70,81,147,183)
+  GOSUB set_type
+  ~GRAF_MOUSE(0,0)
+RETURN
+> PROCEDURE doe_menu
+  GOSUB doe_optie(msg&(5))
+  ~MENU_TNORMAL(menu_adr%,msg&(4),1)
+RETURN
+> PROCEDURE doe_toets
+  IF key& MOD 256=0 AND func|(MAX(MIN(key& DIV 256-58,10),1))
+    SELECT key& DIV 256-58
+    CASE 1  !  bewaar sprite
+      GOSUB doe_optie(spbewaar&)
+    CASE 2  !  laad sprite
+      GOSUB doe_optie(splaad&)
+    CASE 3  !  laad file
+      GOSUB doe_optie(flaad&)
+    CASE 4  !  bewaar file
+      GOSUB doe_optie(fbewaar&)
+    CASE 5  !  masker
+      GOSUB doe_optie(masker&)
+    CASE 6  !  lijn
+      GOSUB doe_optie(lijn&)
+    CASE 7  !  vul blok
+      GOSUB doe_optie(vulb&)
+    CASE 8  !  mask blok
+      GOSUB doe_optie(maskb&)
+    CASE 9  !  wis blok
+      GOSUB doe_optie(wisb&)
+    CASE 10 !  test
+      GOSUB doe_optie(test&)
+    CASE 39 !  undo
+      GOSUB doe_optie(undo&)
+    CASE 40 !  help
+      GOSUB doe_optie(help&)
+    ENDSELECT
+  ENDIF
+RETURN
+> PROCEDURE doe_optie(m&)
+  ~WIND_GET(wind&(1),4,wx&,wy&,wb&,wh&)
+  SELECT m&
+  CASE info&
+    ~FORM_CENTER(info_adr%,wx&,wy&,wb&,wh&)
+    ~FORM_DIAL(0,0,0,1,1,wx&,wy&,wb&,wh&)
+    ~FORM_DIAL(1,0,0,1,1,wx&,wy&,wb&,wh&)
+    ~OBJC_DRAW(info_adr%,0,2,wx&,wy&,wb&,wh&)
+    i&=FORM_DO(info_adr%,0)
+    ~OBJC_CHANGE(info_adr%,i&,0,0,0,640,400,0,0)
+    ~FORM_DIAL(2,0,0,1,1,wx&,wy&,wb&,wh&)
+    ~FORM_DIAL(3,0,0,1,1,wx&,wy&,wb&,wh&)
+  CASE spbewaar&
+    ~WIND_SET(wind&(2),10,0,0,0,0)
+    ~OBJC_DRAW(ed_adr%,0,2,0,0,640,400)
+    i&=FORM_DO(ed_adr%,0)
+    ~OBJC_CHANGE(ed_adr%,i&,0,0,0,640,400,0,1)
+    spnaam$=CHAR{{OB_SPEC(ed_adr%,edit&)}}
+    IF spnaam$=""
+      GOSUB show_info("Geen naam: sprite is niet bewaard")
+      DELAY 2
+      GOSUB show_info("")
+    ELSE
+      IF MID$(spnaam$,1,1)<"A" OR MID$(spnaam$,1,1)>"Z"
+        GOSUB show_info("Naam begint niet met letter: sprite is niet bewaard")
+        DELAY 2
+        GOSUB show_info("")
+      ELSE
+        xi&=-1
+        REPEAT
+          INC xi&
+          fout!=spnaam$=naam$(xi&) AND xi&<>sn&
+        UNTIL fout! OR xi&=pn&
+        IF fout!
+          GOSUB show_info("Dubbele naam: sprite is niet bewaard")
+          DELAY 2
+          GOSUB show_info("")
+        ELSE
+          ~WIND_GET(wind&(1),4,wx1&,wy1&,wb1&,wh1&)
+          ~WIND_GET(wind&(2),4,wx2&,wy2&,wb2&,wh2&)
+          ~GRAF_SHRINKBOX(wx2&,wy2&,wb2&,wh2&,wx1&,wy1&,wb1&,wh1&)
+          IF pn&<mfree% AND sn&=pn&
+            INC pn&
+            naam$(pn&)=""
+            type|(pn&)=type|
+          ENDIF
+          naam$(sn&)=spnaam$
+          BMOVE wsp_adr%,V:sprite|(0,sn&),size&
+          type|(sn&)=type|
+          spax|(sn&)=ax|
+          spay|(sn&)=ay|
+          spmask|(sn&)=-spmask!
+        ENDIF
+      ENDIF
+    ENDIF
+    GOSUB set_slider
+  CASE splaad&
+    ~WIND_GET(wind&(1),4,wx1&,wy1&,wb1&,wh1&)
+    ~WIND_GET(wind&(2),4,wx2&,wy2&,wb2&,wh2&)
+    ~GRAF_GROWBOX(wx2&,wy2&,wb2&,wh2&,wx1&,wy1&,wb1&,wh1&)
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    BMOVE V:sprite|(0,sn&),wsp_adr%,size&
+    IF type|<5
+      ~MENU_ICHECK(menu_adr%,sprite&+type|-1,0)
+    ELSE
+      ~MENU_ICHECK(menu_adr%,x8&+bx|,0)
+      ~MENU_ICHECK(menu_adr%,y8&+by|,0)
+    ENDIF
+    type|=type|(sn&)
+    GOSUB type_xy(type|,x|,y|)
+    IF type|<5
+      bx|=1
+      by|=1
+      ~MENU_ICHECK(menu_adr%,sprite&+type|-1,1)
+    ELSE
+      bx|=(type|-5) DIV 6
+      by|=(type|-5) MOD 6
+      ~MENU_ICHECK(menu_adr%,x8&+bx|,1)
+      ~MENU_ICHECK(menu_adr%,y8&+by|,1)
+    ENDIF
+    xo|=x|
+    yo|=y|
+    ax|=spax|(sn&)
+    ay|=spay|(sn&)
+    spmask!=-spmask|(sn&)
+    GOSUB set_type
+  CASE spwis&
+    DEC pn&
+    BMOVE V:sprite|(0,sn&),csp_adr%,size&
+    BMOVE V:sprite|(0,pn&),V:sprite|(0,sn&),size&
+    BMOVE csp_adr%,V:sprite|(0,pn&),size&
+    SWAP type|(sn&),type|(pn&)
+    SWAP spax|(sn&),spax|(pn&)
+    SWAP spay|(sn&),spay|(pn&)
+    SWAP spmask|(sn&),spmask|(pn&)
+    naam$(sn&)=naam$(pn&)
+    naam$(pn&)=""
+    GOSUB set_slider
+  CASE bspicn&
+    FOR k&=0 TO -spmask!
+      IF k&
+        GOSUB show_info("Bewaar bestand: icon mask")
+        icon_adr%=wsp_adr%
+      ELSE
+        GOSUB show_info("Bewaar bestand: icon data")
+        icon_adr%=wsp_adr%+x|*y|
+      ENDIF
+      FILESELECT "\*.ICN","",file$
+      '      GOSUB show_info("")
+      IF file$<>""
+        lnaam&=INSTR(file$,".")
+        IF lnaam&>1
+          file$=LEFT$(file$,lnaam&-1)+".ICN"
+        ELSE
+          file$=file$+".ICN"
+        ENDIF
+        '
+        ~GRAF_MOUSE(2,0)
+        OPEN "O",#1,file$
+        PRINT #1,"/* GEM Icon Definition, created with SPR_EDIT */"
+        GOSUB hex(x|*8,hex$)
+        PRINT #1,"#define ICON_W 0x"+hex$
+        GOSUB hex(y|,hex$)
+        PRINT #1,"#define ICON_H 0x"+hex$
+        GOSUB hex(y|*x| DIV 2,hex$)
+        PRINT #1,"#define DATASIZE 0x"+hex$
+        PRINT #1,"UWORD sprite[DATASIZE] ="
+        PRINT #1,"{";
+        n&=x|*y| DIV 8  ! aantal regels
+        FOR x&=0 TO n&-1
+          GOSUB hex(INT{icon_adr%+x&*8},hex$)
+          PRINT #1," 0x"+hex$+",";
+          GOSUB hex(INT{icon_adr%+x&*8+2},hex$)
+          PRINT #1," 0x"+hex$+",";
+          GOSUB hex(INT{icon_adr%+x&*8+4},hex$)
+          PRINT #1," 0x"+hex$+",";
+          GOSUB hex(INT{icon_adr%+x&*8+6},hex$)
+          PRINT #1," 0x"+hex$;
+          IF x&=n&-1
+            PRINT #1,
+            PRINT #1,"};"
+          ELSE
+            PRINT #1,","
+            PRINT #1," ";
+          ENDIF
+        NEXT x&
+        CLOSE #1
+        ~GRAF_MOUSE(0,0)
+      ENDIF
+    NEXT k&
+    GOSUB show_info("")
+  CASE fbewaar&
+    GOSUB show_info("Bewaar bestand")
+    FILESELECT "\*.SPR",file$,file$
+    IF file$<>""
+      ~GRAF_MOUSE(2,0)
+      lnaam&=INSTR(file$,".")
+      IF lnaam&>0
+        file$=LEFT$(file$,lnaam&-1)
+      ENDIF
+      IF FSFIRST(file$+".DEF",0)<>-33
+        RENAME file$+".DEF" AS file$+".BAK"
+      ENDIF
+      OPEN "O",#1,file$+".SPR"
+      OPEN "O",#2,file$+".DEF"
+      OPEN "O",#3,file$+".LST"
+      PRINT #3;"OPEN I,#1,",file$+".SPR"
+      '
+      BPUT #2,V:pn&,2
+      FOR n&=0 TO pn&-1
+        GOSUB calc_sprite(V:sprite|(0,n&),type|(n&),spax|(n&),spay|(n&),spmask|(n&),sprite$,sprite.m$)
+        splen&=LEN(sprite$)
+        GOSUB get_info(type|(n&),spmask|(n&),sp_info$)
+        naaml|=LEN(naam$(n&))
+        BPUT #2,V:naaml|,1
+        BPUT #2,V:naam$(n&),naaml|
+        BPUT #2,V:type|(n&),1
+        BPUT #2,V:spmask|(n&),1
+        BPUT #2,V:spax|(n&),1
+        BPUT #2,V:spay|(n&),1
+        BPUT #1,V:sprite$,splen&
+        GOSUB type_xy(type|(n&),lx|,ly|)
+        bytes&=lx|*ly|
+        PRINT #3;naam$(n&);"$=INPUT$(";splen&;",#1)"," ! ";sp_info$
+        IF spmask|(n&)
+          IF type|(n&)>5
+            BPUT #1,V:sprite.m$,splen&
+            PRINT #3;naam$(n&);".m$=INPUT$(";splen&;",#1)"
+          ENDIF
+          BPUT #2,V:sprite|(0,n&),2*bytes&
+        ELSE
+          BPUT #2,V:sprite|(0,n&),bytes&
+        ENDIF
+      NEXT n&
+      PRINT #3;"CLOSE #1"
+      CLOSE
+      ~GRAF_MOUSE(0,0)
+    ENDIF
+    GOSUB show_info("")
+  CASE nieuw&
+    sn&=0
+    pn&=0
+    naam$(0)=""
+    type|(0)=1
+    GOSUB set_slider
+  CASE merge&,flaad&
+    GOSUB show_info("Laad bestand")
+    FILESELECT "\*.DEF",file$,file$
+    IF file$<>""
+      IF m&=flaad&
+        GOSUB doe_optie(nieuw&)
+      ENDIF
+      ~GRAF_MOUSE(2,0)
+      OPEN "I",#1,file$
+      BGET #1,V:pnx&,2
+      keuze&=0
+      IF pn&+pnx&>mfree%
+        keuze&=FORM_ALERT(1,"[1][Het bestand past niet|in zijn geheel|in het geheugen][ OK | Cancel ]")
+      ENDIF
+      IF keuze&=0
+        pnx&=MIN(pn&+pnx&,mfree%)
+        n&=pn&
+        WHILE n&<=pnx&-1
+          BGET #1,V:naaml|,1
+          spnaam$=INPUT$(naaml|,#1)
+          BGET #1,V:type|(n&),1
+          BGET #1,V:spmask|(n&),1
+          BGET #1,V:spax|(n&),1
+          BGET #1,V:spay|(n&),1
+          GOSUB type_xy(type|(n&),lx|,ly|)
+          bytes&=lx|*ly|
+          IF spmask|(n&)
+            BGET #1,V:sprite|(0,n&),2*bytes&
+          ELSE
+            BGET #1,V:sprite|(0,n&),bytes&
+            BMOVE V:sprite|(0,n&),V:sprite|(bytes&,n&),bytes&
+          ENDIF
+          naam$(n&)=spnaam$
+          '
+          REPEAT
+            dubbel!=FALSE
+            xi&=0
+            WHILE xi&<pn& AND NOT dubbel!
+              dubbel!=naam$(n&)=naam$(xi&)
+              INC xi&
+            WEND
+            IF dubbel!
+              GOSUB show_info("Dubbele naam: Geef andere, unieke naam")
+              CHAR{{OB_SPEC(ed_adr%,edit&)}}=spnaam$
+              ~WIND_SET(wind&(2),10,0,0,0,0)
+              ~OBJC_DRAW(ed_adr%,0,2,0,0,640,400)
+              i&=FORM_DO(ed_adr%,0)
+              ~OBJC_CHANGE(ed_adr%,i&,0,0,0,640,400,0,1)
+              naam$(n&)=CHAR{{OB_SPEC(ed_adr%,edit&)}}
+              IF LEN(naam$(n&))=0
+                dubbel!=FALSE
+                GOSUB show_info("Lege naam: Sprite niet bewaard")
+                DELAY 2
+                DEC n&
+                DEC pnx&
+              ENDIF
+              GOSUB show_info("")
+            ENDIF
+          UNTIL NOT dubbel!
+          INC n&
+        WEND
+        sn&=pn&
+        pn&=pnx&
+        naam$(pn&)=""
+        type|(pn&)=1
+        GOSUB set_slider
+      ENDIF
+      CLOSE #1
+      ~GRAF_MOUSE(0,0)
+    ENDIF
+    GOSUB show_info("")
+  CASE help&
+    IF FSFIRST("SPR_EDIT.HLP",0)=-33
+      ~FORM_ALERT(1,"[1][Het bestand SPR_EDIT.HLP|is niet gevonden.][ OK ]")
+    ELSE
+      ~WIND_OPEN(wind&(3),0,19,639,399-18)
+      ~WIND_GET(wind&(3),4,wx&,wy&,wb&,wh&)
+      BOUNDARY 0
+      DEFFILL 0,,
+      ty&=64
+      ~WIND_UPDATE(1)
+      PBOX wx&,wy&,wx&+wb&,wy&+wh&
+      OPEN "I",#1,"SPR_EDIT.HLP"
+      INPUT #1,lees$
+      INPUT #1,lees$
+      FOR i&=1 TO 14
+        LINE INPUT #1,lees$
+        GOSUB prints(lees$)
+      NEXT i&
+      REPEAT
+        LINE INPUT #1,lees$
+        GOSUB prints(lees$)
+        REPEAT
+          ~GRAF_MKSTATE(mx&,my&,mk&,k_state&)
+        UNTIL mk&
+      UNTIL EOF(#1) OR mk&=2
+      CLOSE #1
+      ~WIND_UPDATE(0)
+      ~WIND_CLOSE(wind&(3))
+      BOUNDARY 1
+    ENDIF
+  CASE undo&
+    BMOVE V:spr_buf|(0),wsp_adr%,2*x|*y|
+    GOSUB teken_sprite
+  CASE meminfo&
+    ~FORM_ALERT(1,"[1][GEHEUGEN INFORMATIE| |Vrij:     "+STR$(mfree%-pn&)+" sprites|Gebruikt: "+STR$(pn&)+" sprites][ OK ]")
+  CASE stop&
+    i&=FORM_ALERT(2,"[2][|Wil je echt stoppen][ Ja | Nee ]")
+    IF i&=1
+      ~MENU_TNORMAL(menu_adr%,msg&(4),1)
+      ~WIND_CLOSE(wind&(1))
+      ~WIND_DELETE(wind&(1))
+      ~WIND_CLOSE(wind&(2))
+      ~WIND_DELETE(wind&(2))
+      ~WIND_DELETE(wind&(3))
+      ~RSRC_FREE()
+      EDIT
+    ENDIF
+  CASE sprite& TO icon&
+    IF type|<5
+      ~MENU_ICHECK(menu_adr%,sprite&+type|-1,0)
+    ELSE
+      ~MENU_ICHECK(menu_adr%,x8&+bx|,0)
+      ~MENU_ICHECK(menu_adr%,y8&+by|,0)
+    ENDIF
+    type|=m&-sprite&+1
+    ~MENU_ICHECK(menu_adr%,m&,1)
+    IF m&=icon&
+      bx|=3
+      by|=3
+    ELSE
+      bx|=0
+      by|=0
+    ENDIF
+    GOSUB set_type
+  CASE x8& TO x64&
+    IF type|<5
+      ~MENU_ICHECK(menu_adr%,sprite&+type|-1,0)
+    ELSE
+      ~MENU_ICHECK(menu_adr%,x8&+bx|,0)
+    ENDIF
+    bx|=m&-x8&
+    type|=5+bx|*6+by|
+    ~MENU_ICHECK(menu_adr%,m&,1)
+    ~MENU_ICHECK(menu_adr%,y8&+by|,1)
+    GOSUB set_type
+  CASE y8& TO y64&
+    IF type|<5
+      ~MENU_ICHECK(menu_adr%,sprite&+type|-1,0)
+    ELSE
+      ~MENU_ICHECK(menu_adr%,y8&+by|,0)
+    ENDIF
+    by|=m&-y8&
+    type|=5+bx|*6+by|
+    ~MENU_ICHECK(menu_adr%,m&,1)
+    ~MENU_ICHECK(menu_adr%,x8&+bx|,1)
+    GOSUB set_type
+  CASE masker&
+    IF type|>=5
+      spmask!=NOT spmask!
+      GOSUB set_type
+    ENDIF
+  CASE rechts&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    ~WIND_SET(wind&(1),10,0,0,0,0)
+    FOR yi&=0 TO y|-1
+      px|=@bitget(8*x|-1,yi&,0)
+      FOR xi&=8*x|-2 TO 0 STEP -1
+        GOSUB bitput(@bitget(xi&,yi&,0),xi&+1,yi&)
+      NEXT xi&
+      GOSUB bitput(px|,0,yi&)
+    NEXT yi&
+    ax|=ax|+1
+    IF ax|=8*x|
+      ax|=0
+    ENDIF
+    GOSUB actie_punt
+    GOSUB copyw1
+  CASE links&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    ~WIND_SET(wind&(1),10,0,0,0,0)
+    FOR yi&=0 TO y|-1
+      px|=@bitget(0,yi&,0)
+      FOR xi&=0 TO 8*x|-2
+        GOSUB bitput(@bitget(xi&+1,yi&,0),xi&,yi&)
+      NEXT xi&
+      GOSUB bitput(px|,8*x|-1,yi&)
+    NEXT yi&
+    IF ax|=0
+      ax|=8*x|-1
+    ELSE
+      ax|=ax|-1
+    ENDIF
+    GOSUB actie_punt
+    GOSUB copyw1
+  CASE omlaag&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    ~WIND_SET(wind&(1),10,0,0,0,0)
+    FOR xi&=0 TO 8*x|-1
+      px|=@bitget(xi&,y|-1,0)
+      FOR yi&=y|-2 TO 0 STEP -1
+        GOSUB bitput(@bitget(xi&,yi&,0),xi&,yi&+1)
+      NEXT yi&
+      GOSUB bitput(px|,xi&,0)
+    NEXT xi&
+    ay|=ay|+1
+    IF ay|=y|
+      ay|=0
+    ENDIF
+    GOSUB actie_punt
+    GOSUB copyw1
+  CASE omhoog&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    ~WIND_SET(wind&(1),10,0,0,0,0)
+    FOR xi&=0 TO 8*x|-1
+      px|=@bitget(xi&,0,0)
+      FOR yi&=0 TO y|-2
+        GOSUB bitput(@bitget(xi&,yi&+1,0),xi&,yi&)
+      NEXT yi&
+      GOSUB bitput(px|,xi&,y|-1)
+    NEXT xi&
+    IF ay|=0
+      ay|=y|-1
+    ELSE
+      ay|=ay|-1
+    ENDIF
+    GOSUB actie_punt
+    GOSUB copyw1
+  CASE vert&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    ~WIND_SET(wind&(1),10,0,0,0,0)
+    FOR xi&=0 TO 8*x|-1
+      FOR yi&=y| DIV 2 TO y|-1
+        px|=@bitget(xi&,yi&,0)
+        GOSUB bitput(@bitget(xi&,y|-1-yi&,0),xi&,yi&)
+        GOSUB bitput(px|,xi&,y|-1-yi&)
+      NEXT yi&
+    NEXT xi&
+    ay|=y|-1-ay|
+    GOSUB actie_punt
+    GOSUB copyw1
+  CASE horizon&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    ~WIND_SET(wind&(1),10,0,0,0,0)
+    FOR yi&=0 TO y|-1
+      FOR xi&=x|*4 TO 8*x|-1
+        px|=@bitget(xi&,yi&,0)
+        GOSUB bitput(@bitget(8*x|-1-xi&,yi&,0),xi&,yi&)
+        GOSUB bitput(px|,8*x|-1-xi&,yi&)
+      NEXT xi&
+    NEXT yi&
+    ax|=8*x|-1-ax|
+    GOSUB actie_punt
+    GOSUB copyw1
+  CASE rom&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    ~WIND_SET(wind&(1),10,0,0,0,0)
+    IF 8*x|=y|
+      FOR xi&=0 TO y| DIV 2-1
+        FOR yi&=0 TO y| DIV 2-1
+          px|=@bitget(xi&,yi&,0)
+          GOSUB bitput(@bitget(yi&,y|-1-xi&,0),xi&,yi&)
+          GOSUB bitput(@bitget(y|-1-xi&,y|-1-yi&,0),yi&,y|-1-xi&)
+          GOSUB bitput(@bitget(y|-1-yi&,xi&,0),y|-1-xi&,y|-1-yi&)
+          GOSUB bitput(px|,y|-1-yi&,xi&)
+        NEXT yi&
+      NEXT xi&
+      xi&=ax|
+      ax|=y|-1-ay|
+      ay|=xi&
+      GOSUB actie_punt
+      GOSUB copyw1
+    ELSE
+      GOSUB show_info("Kan alleen bij vierkanten")
+      DELAY 1
+      GOSUB show_info("")
+    ENDIF
+  CASE lom&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    ~WIND_SET(wind&(1),10,0,0,0,0)
+    IF 8*x|=y|
+      FOR xi&=0 TO y| DIV 2-1
+        FOR yi&=0 TO y| DIV 2-1
+          px|=@bitget(xi&,yi&,0)
+          GOSUB bitput(@bitget(y|-1-yi&,xi&,0),xi&,yi&)
+          GOSUB bitput(@bitget(y|-1-xi&,y|-1-yi&,0),y|-1-yi&,xi&)
+          GOSUB bitput(@bitget(yi&,y|-1-xi&,0),y|-1-xi&,y|-1-yi&)
+          GOSUB bitput(px|,yi&,y|-1-xi&)
+        NEXT yi&
+      NEXT xi&
+      xi&=ax|
+      ax|=ay|
+      ay|=8*x|-1-xi&
+      GOSUB actie_punt
+      GOSUB copyw1
+    ELSE
+      GOSUB show_info("Kan alleen bij vierkanten")
+      DELAY 1
+      GOSUB show_info("")
+    ENDIF
+  CASE lijn&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    GOSUB show_info("Geef beginpunt")
+    GOSUB get_punt(xb|,yb|)
+    GOSUB show_info("Geef eindpunt ")
+    GOSUB get_punt(xa|,ya|)
+    GOSUB show_info("")
+    xc&=xa|-xb|
+    yc&=ya|-yb|
+    dp&=MAX(ABS(xc&),ABS(yc&))
+    IF dp&<>0
+      dx=xc&/dp&
+      dy=yc&/dp&
+      xb=xb|
+      yb=yb|
+      FOR i&=0 TO dp&
+        xi&=xb+0.5
+        yi&=yb+0.5
+        GOSUB bitput(2,xi&,yi&)
+        xb=xb+dx
+        yb=yb+dy
+      NEXT i&
+      GOSUB actie_punt
+    ELSE
+      GOSUB bitput(2,xa|,ya|)
+    ENDIF
+    GOSUB copyw1
+  CASE vulb&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    GOSUB show_info("Geef linkerbovenhoek")
+    GOSUB get_punt(xb|,yb|)
+    GOSUB show_info("Geef rechterbenedenhoek")
+    GOSUB get_punt(xa|,ya|)
+    GOSUB show_info("")
+    FOR xi&=xb| TO xa|
+      FOR yi&=yb| TO ya|
+        GOSUB bitput(2,xi&,yi&)
+      NEXT yi&
+    NEXT xi&
+    GOSUB actie_punt
+    GOSUB copyw1
+  CASE maskb&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    GOSUB show_info("Geef linkerbovenhoek")
+    GOSUB get_punt(xb|,yb|)
+    GOSUB show_info("Geef rechterbenedenhoek")
+    GOSUB get_punt(xa|,ya|)
+    GOSUB show_info("")
+    FOR xi&=xb| TO xa|
+      FOR yi&=yb| TO ya|
+        GOSUB bitput(1,xi&,yi&)
+      NEXT yi&
+    NEXT xi&
+    GOSUB actie_punt
+    GOSUB copyw1
+  CASE wisb&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    GOSUB show_info("Geef linkerbovenhoek")
+    GOSUB get_punt(xb|,yb|)
+    GOSUB show_info("Geef rechterbenedenhoek")
+    GOSUB get_punt(xa|,ya|)
+    GOSUB show_info("")
+    FOR xi&=xb| TO xa|
+      FOR yi&=yb| TO ya|
+        GOSUB bitput(0,xi&,yi&)
+      NEXT yi&
+    NEXT xi&
+    GOSUB actie_punt
+    GOSUB copyw1
+  CASE invb&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    GOSUB show_info("Geef linkerbovenhoek")
+    GOSUB get_punt(xb|,yb|)
+    GOSUB show_info("Geef rechterbenedenhoek")
+    GOSUB get_punt(xa|,ya|)
+    GOSUB show_info("")
+    FOR xi&=xb| TO xa|
+      FOR yi&=yb| TO ya|
+        px|=@bitget(xi&,yi&,0)
+        IF px|
+          GOSUB bitput(3-px|,xi&,yi&)
+        ENDIF
+      NEXT yi&
+    NEXT xi&
+    GOSUB actie_punt
+    GOSUB copyw1
+  CASE copyb&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    GOSUB show_info("Geef linkerbovenhoek orgineel blok")
+    GOSUB get_punt(xc|,yc|)
+    GOSUB show_info("Geef rechterbenedenhoek orgineel blok")
+    GOSUB get_punt(xb|,yb|)
+    GOSUB show_info("Geef linkerbovenhoek doelblok        ")
+    GOSUB get_punt(xa|,ya|)
+    GOSUB show_info("")
+    BMOVE wsp_adr%,csp_adr%,size&
+    FOR xi&=xc| TO xb|
+      FOR yi&=yc| TO yb|
+        IF xa|+xi&-xc|<8*x| AND ya|+yi&-yc|<y|
+          GOSUB bitput(@bitget(xi&,yi&,1),xa|+xi&-xc|,ya|+yi&-yc|)
+        ENDIF
+      NEXT yi&
+    NEXT xi&
+    GOSUB actie_punt
+    GOSUB copyw1
+  CASE actpunt&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    GOSUB show_info("Geef actie-punt")
+    GOSUB get_punt(ax|,ay|)
+    GOSUB show_info("")
+    GOSUB set_type
+  CASE automask&
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+    ~WIND_SET(wind&(1),10,0,0,0,0)
+    FOR xi&=0 TO 8*x|-1
+      FOR yi&=0 TO y|-1
+        IF @bitget(xi&,yi&,0)=0
+          a!=yi&>0 AND @bitget(xi&,yi&-1,0)=2
+          a!=a! OR (yi&<y|-1 AND @bitget(xi&,yi&+1,0)=2)
+          a!=a! OR (xi&>0 AND @bitget(xi&-1,yi&,0)=2)
+          a!=a! OR (xi&<8*x|-1 AND @bitget(xi&+1,yi&,0)=2)
+          IF a!
+            GOSUB bitput(1,xi&,yi&)
+          ENDIF
+        ENDIF
+      NEXT yi&
+    NEXT xi&
+    GOSUB copyw1
+  CASE noroost&
+    dr&=1
+    rooster&=0
+    GOSUB teken_sprite
+    ~MENU_ICHECK(menu_adr%,oldroost&,0)
+    ~MENU_ICHECK(menu_adr%,noroost&,1)
+    oldroost&=noroost&
+  CASE zwroost&
+    dr&=0
+    rooster&=1
+    GOSUB teken_sprite
+    ~MENU_ICHECK(menu_adr%,oldroost&,0)
+    ~MENU_ICHECK(menu_adr%,zwroost&,1)
+    oldroost&=zwroost&
+  CASE witroost&
+    dr&=0
+    rooster&=0
+    GOSUB teken_sprite
+    ~MENU_ICHECK(menu_adr%,oldroost&,0)
+    ~MENU_ICHECK(menu_adr%,witroost&,1)
+    oldroost&=witroost&
+  CASE proost&
+    dr&=0
+    rooster&=2
+    GOSUB teken_sprite
+    ~MENU_ICHECK(menu_adr%,oldroost&,0)
+    ~MENU_ICHECK(menu_adr%,proost&,1)
+    oldroost&=proost&
+  CASE test&
+    IF x|=1
+      GOSUB show_info("Alleen sprites van 16 of meer pixels breed")
+      DELAY 2
+      GOSUB show_info("")
+    ELSE
+      IF type|<>3 AND type|<>4
+        ~FORM_DIAL(0,0,0,0,0,147,47,346,306)
+        ~FORM_DIAL(1,0,0,0,0,147,47,346,306)
+        BOUNDARY 1
+        DEFLINE 1,,,
+        DEFFILL ,0,1
+        PBOX 147,47,493,353
+        BOX 150,50,320,350
+        DEFFILL ,1,1
+        PBOX 320,50,490,350
+        GOSUB show_sp(wsp_adr%,type|,ax|,ay|,spmask!)
+        ~FORM_DIAL(2,0,0,0,0,147,47,346,306)
+        ~FORM_DIAL(3,0,0,0,0,147,47,346,306)
+      ELSE
+        GOSUB show_sp(wsp_adr%,type|,ax|,ay|,spmask!)
+      ENDIF
+    ENDIF
+  ENDSELECT
+RETURN
+> PROCEDURE doe_vensters
+  wha&=msg&(4)
+  IF wha&=wind&(1)
+    win&=1
+  ELSE
+    win&=2
+  ENDIF
+  SELECT msg&(1)
+  CASE 20                                                 ! herteken scherm
+    ~WIND_GET(wha&,4,wxo&,wyo&,wb&,wh&)
+    ~WIND_GET(wha&,11,wx&,wy&,wb&,wh&)
+    WHILE wb&<>0 AND wh&<>0
+      IF msg&(4)=wind&(1)
+        wb&=MIN(wb&,639-wx&)-1                  ! echt nodig??
+        wh&=MIN(wh&,399-wy&)-1
+        par%(0)=wx&-wxo&
+        par%(1)=wy&-wyo&
+        par%(2)=par%(0)+wb&
+        par%(3)=par%(1)+wh&
+        par%(4)=wx&
+        par%(5)=wy&
+        par%(6)=par%(4)+wb&
+        par%(7)=par%(5)+wh&
+        BITBLT mfdb3%(),mfdb1%(),par%()
+      ELSE
+        ~OBJC_DRAW(ed_adr%,0,2,wx&,wy&,wb&,wh&)
+      ENDIF
+      ~WIND_GET(wha&,12,wx&,wy&,wb&,wh&)
+    WEND
+  CASE 21                                                 ! klik venster
+    ~WIND_SET(wha&,10,0,0,0,0)
+  CASE 22                                                 ! show_sprite
+    IF win&=1
+      IF x|=1
+        GOSUB show_info("Alleen sprites van 16 of meer pixels breed")
+        DELAY 2
+        GOSUB show_info("")
+      ELSE
+        GOSUB show_sp(wsp_adr%,type|,ax|,ay|,spmask!)
+      ENDIF
+    ELSE
+      GOSUB type_xy(type|(sn&),xt|,yt|)
+      IF xt|=1
+        GOSUB show_info("Alleen sprites van 16 of meer pixels breed")
+        DELAY 2
+        GOSUB show_info("")
+      ELSE
+        GOSUB show_sp(V:sprite|(0,sn&),type|(sn&),spax|(sn&),spay|(sn&),spmask|(sn&))
+      ENDIF
+    ENDIF
+  CASE 24                                                 ! hor slider
+    SELECT msg&(5)
+    CASE 4                                                ! <||
+      sn&=0
+      GOSUB set_slider
+    CASE 5                                                ! ||>
+      sn&=pn&
+      GOSUB set_slider
+    CASE 6                                                ! <=
+      IF sn&>0
+        sn&=sn&-1
+      ENDIF
+      GOSUB set_slider
+    CASE 7                                                ! =>
+      IF sn&<pn&
+        sn&=sn&+1
+      ENDIF
+      GOSUB set_slider
+    ENDSELECT
+  CASE 25                                                 ! slider verschoven
+    sn&=pn&*msg&(5) DIV 1000
+    GOSUB set_slider
+  CASE 28                                                 ! venster verschoven
+    ~WIND_GET(wha&,5,wx&,wy&,wb&,wh&)
+    wx&=msg&(5)
+    wy&=msg&(6)
+    ~WIND_SET(wha&,5,wx&,wy&,wb&,wh&)
+    IF wha&=wind&(1)
+      ~WIND_GET(wha&,4,wx&,wy&,wb&,wh&)
+      edwx&=wx&
+      edwy&=wy&
+      box_x&=wx&+7
+      box_y&=wy&+7
+      box_b&=MIN(x|*dx&*8,639-7-dx&-wx&)
+      box_h&=MIN(y|*dy&,399-7-dy&-wy&)
+    ELSE
+      ~WIND_GET(wha&,4,wx&,wy&,wb&,wh&)
+      OB_X(ed_adr%,0)=wx&
+      OB_Y(ed_adr%,0)=wy&
+    ENDIF
+    ~WIND_GET(wha&,4,wx&,wy&,wb&,wh&)
+  ENDSELECT
+RETURN
+> PROCEDURE set_type
+  spmask!=(type|<=2 OR type|=4) OR (type|>=5 AND spmask!)
+  GOSUB type_xy(type|,x|,y|)
+  '
+  IF type|>2
+    ax|=0
+    ay|=0
+  ENDIF
+  '
+  IF y|>=48
+    dx&=5
+    dy&=5
+  ELSE
+    dx&=8
+    dy&=8
+  ENDIF
+  '
+  IF type|<=2 OR type|=4
+    ~MENU_ICHECK(menu_adr%,masker&,0)
+    ~MENU_IENABLE(menu_adr%,masker&,0)
+    func|(8)=0
+    ~MENU_IENABLE(menu_adr%,maskb&,1)
+    IF type|<=2
+      ~MENU_IENABLE(menu_adr%,actpunt&,1)
+    ELSE
+      ~MENU_IENABLE(menu_adr%,actpunt&,0)
+    ENDIF
+    ~MENU_IENABLE(menu_adr%,automask&,1)
+  ELSE
+    ~MENU_IENABLE(menu_adr%,actpunt&,0)
+    ~MENU_IENABLE(menu_adr%,masker&,1)
+    func|(8)=1
+    IF spmask!
+      ~MENU_ICHECK(menu_adr%,masker&,1)
+      ~MENU_IENABLE(menu_adr%,maskb&,1)
+      ~MENU_IENABLE(menu_adr%,automask&,1)
+    ELSE
+      ~MENU_ICHECK(menu_adr%,masker&,0)
+      ~MENU_IENABLE(menu_adr%,maskb&,0)
+      ~MENU_IENABLE(menu_adr%,automask&,0)
+    ENDIF
+  ENDIF
+  IF x|=1
+    ~MENU_IENABLE(menu_adr%,bspicn&,0)
+    ~MENU_IENABLE(menu_adr%,test&,0)
+  ELSE
+    ~MENU_IENABLE(menu_adr%,bspicn&,1)
+    ~MENU_IENABLE(menu_adr%,test&,1)
+  ENDIF
+  '
+  ~WIND_GET(wind&(1),5,wx&,wy&,bo&,ho&)
+  wb&=19+dx&*8*x|
+  wh&=55+dy&*y|
+  wx&=MIN(wx&,639-wb&)
+  wy&=MIN(wy&,399-wh&)
+  '
+  ~WIND_SET(wind&(1),5,wx&,wy&,wb&,wh&)
+  GOSUB teken_sprite
+RETURN
+> PROCEDURE set_slider
+  ~WIND_SET(wind&(2),10,0,0,0,0)
+  IF sn&<>pn&
+    ~MENU_IENABLE(menu_adr%,spwis&,1)
+  ELSE
+    ~MENU_IENABLE(menu_adr%,spwis&,0)
+  ENDIF
+  IF pn&=0
+    ~MENU_IENABLE(menu_adr%,fbewaar&,0)
+    func|(3)=0
+  ELSE
+    ~MENU_IENABLE(menu_adr%,fbewaar&,1)
+    func|(3)=1
+  ENDIF
+  ~WIND_SET(wind&(2),15,1000 DIV (pn&+1),0,0,0)
+  IF pn&
+    ~WIND_SET(wind&(2),8,1000*(sn&) DIV (pn&),0,0,0)
+  ENDIF
+  IF sn&=pn&
+    sp_info$=" LEEG"
+  ELSE
+    GOSUB get_info(type|(sn&),spmask|(sn&),sp_info$)
+  ENDIF
+  CHAR{OB_SPEC(ed_adr%,ninfo&)}=sp_info$
+  CHAR{{OB_SPEC(ed_adr%,edit&)}}=naam$(sn&)
+  ~OBJC_DRAW(ed_adr%,0,2,0,0,640,400)
+RETURN
+> PROCEDURE get_info(type|,spmask!,VAR sp_info$)
+  LOCAL x,y|
+  GOSUB type_xy(type|,x|,y|)
+  IF type|<5
+    sp_info$=" "+MID$("SPRITE MUIS   VULLINGICON   ",7*type|-6,7)
+  ELSE
+    sp_info$=" BLOK   "
+  ENDIF
+  sp_info$=sp_info$+" "+STR$(8*x|)+"x"+STR$(y|)+" "+MID$("    MASK",-spmask!*4+1,4)+CHR$(0)
+RETURN
+> PROCEDURE teken_sprite
+  LOCAL yi&,xi&
+  GOSUB type_xy(type|,x|,y|)
+  dx=xo|/x|
+  dy=yo|/y|
+  ~WIND_SET(wind&(1),10,0,0,0,0)
+  ~WIND_GET(wind&(1),4,wx&,wy&,wb&,wh&)
+  GOSUB get_info(type|,spmask!,sp_info$)
+  CHAR{V:info|(0)}=sp_info$
+  ~WIND_SET(wind&(1),3,CARD(SWAP(V:info|(0))),CARD(V:info|(0)),0,0)
+  BMOVE wsp_adr%,csp_adr%,size&
+  IF NOT spmask!
+    BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+  ENDIF
+  ARRAYFILL wsprite|(),0
+  BOUNDARY 0
+  DEFFILL 1,0,
+  ~WIND_UPDATE(1)
+  PBOX wx&,wy&,wx&+wb&-1,wy&+wh&-1
+  DEFLINE 1,,
+  SELECT rooster&
+  CASE 1
+    FOR xi&=0 TO x|*8
+      LINE wx&+8+xi&*dx&,wy&+8,wx&+8+xi&*dx&,wy&+8+y|*dx&
+    NEXT xi&
+    FOR yi&=0 TO y|
+      LINE wx&+8,wy&+8+yi&*dy&,wx&+8+x|*8*dx&,wy&+8+yi&*dx&
+    NEXT yi&
+  CASE 2
+    FOR yi&=0 TO y|
+      FOR xi&=0 TO x|*8
+        PSET wx&+8+xi&*dx&,wy&+8+yi&*dy&,1
+      NEXT xi&
+    NEXT yi&
+  ENDSELECT
+  FOR yi&=0 TO y|-1
+    FOR xi&=0 TO x|*8-1
+      px|=@bitget(xi&*dx,yi&*dy,1)
+      IF px|=1 AND NOT spmask!
+        GOSUB bitput(0,xi&,yi&)
+      ELSE
+        IF px|<>0
+          GOSUB bitput(px|,xi&,yi&)
+        ENDIF
+      ENDIF
+    NEXT xi&
+  NEXT yi&
+  xo|=x|
+  yo|=y|
+  GOSUB actie_punt
+  ~WIND_UPDATE(0)
+  GOSUB copyw1
+  ~WIND_GET(wind&(1),4,wx&,wy&,wb&,wh&)
+  box_x&=wx&+7
+  box_y&=wy&+7
+  box_b&=MIN(x|*dx&*8,639-7-dx&-wx&)
+  box_h&=MIN(y|*dy&,399-7-dy&-wy&)
+RETURN
+> PROCEDURE get_punt(VAR xa|,ya|)
+  LOCAL pakpunt|
+  pakpunt|=1
+  ~WIND_SET(wind&(1),10,0,0,0,0)
+  REPEAT
+    '    ~EVNT_MOUSE(0,box_x&,box_y&,box_b&,box_h&,mx&,my&,mk&,k_state&)
+    ~GRAF_MKSTATE(mx&,my&,mk&,k_state&)
+    GOSUB in_box
+  UNTIL pakpunt|=0
+RETURN
+> PROCEDURE in_box
+  ~WIND_GET(0,10,hand&,dummy&,dummy&,dummy&)
+  IF hand&=wind&(1) AND mk&
+    ~WIND_GET(hand&,4,wx&,wy&,dummy&,dummy&)
+    xi&=(mx&-7-wx&) DIV dx&
+    yi&=(my&-7-wy&) DIV dy&
+    IF xi&>=0 AND xi&<x|*8 AND yi&>=0 AND yi&<y|
+      IF pakpunt|                   ! klik binnen tekenen
+        xa|=xi&
+        ya|=yi&
+        pakpunt|=0
+        ~BIOS(3,2,7)
+        ~EVNT_TIMER(150)
+      ELSE
+        IF xi&<>xiold& OR yi&<>yiold& OR TIMER>timerold%+150
+          xiold&=xi&
+          yiold&=yi&
+          timerold%=TIMER
+          px|=@bitget(xi&,yi&,0)
+          ~BIOS(3,2,7)
+          IF px|=mk&
+            ps&=0
+          ELSE
+            ps&=3-mk&
+          ENDIF
+          IF ps&=1 AND NOT spmask!
+            ps&=0
+          ENDIF
+          BMOVE wsp_adr%,V:spr_buf|(0),2*x|*y|
+          GOSUB bitput(ps&,xi&,yi&)
+          GOSUB actie_punt
+          GOSUB copyw1
+        ENDIF
+      ENDIF
+    ENDIF
+  ENDIF
+RETURN
+> PROCEDURE bitput(bit&,xi&,yi&)
+  LOCAL pixel&,bitn&,byten&,adr1%,adr2%
+  pixel&=xi&+8*x|*yi&
+  bitn&=7-(pixel& MOD 8)
+  byten&=pixel& DIV 8
+  adr1%=wsp_adr%+byten&
+  adr2%=adr1%+x|*y|
+  SELECT bit&
+  CASE 0
+    BYTE{adr1%}=BCLR(BYTE{adr1%},bitn&)
+    BYTE{adr2%}=BCLR(BYTE{adr2%},bitn&)
+    DEFFILL ,0,1
+  CASE 1
+    BYTE{adr1%}=BSET(BYTE{adr1%},bitn&)
+    BYTE{adr2%}=BCLR(BYTE{adr2%},bitn&)
+    DEFFILL ,2,4
+  CASE 2
+    BYTE{adr1%}=BSET(BYTE{adr1%},bitn&)
+    BYTE{adr2%}=BSET(BYTE{adr2%},bitn&)
+    DEFFILL ,1,1
+  ENDSELECT
+  BOUNDARY 0
+  PBOX wx&+xi&*dx&+9,wy&+yi&*dy&+9,wx&+7+xi&*dx&+dx&+dr&,wy&+7+yi&*dy&+dy&+dr&
+RETURN
+> PROCEDURE actie_punt
+  DEFLINE 1,,,
+  BOX wx&+7,wy&+7,wx&+17+dx&*8*x|-8,wy&+17+dy&*y|-8
+  IF type|<=2
+    '    DEFLINE -43690,,,
+    DEFLINE -87381,,,
+    BOX wx&+8+ax|*dx&,wy&+8+ay|*dy&,wx&+8+dx&+ax|*dx&,wy&+8+dy&+ay|*dy&
+  ENDIF
+RETURN
+> PROCEDURE show_sp(t_adr%,type|,ax|,ay|,t_spmask!)
+  GOSUB type_xy(type|,xt|,yt|)
+  GOSUB calc_sprite(t_adr%,type|,ax|,ay|,t_spmask!,test_sp$,test_m$)
+  GOSUB show_info("Toets rechter muis knop om terug te keren.")
+  SELECT type|
+  CASE 1 ! sprite
+    ~GRAF_MOUSE(255,V:no_mouse&(0))
+    REPEAT
+      ~GRAF_MKSTATE(mx&,my&,mk&,k_state&)
+      IF mx&<>mxo& OR my&<>myo&
+        SPRITE test_sp$,mx&,my&
+      ENDIF
+      mxo&=mx&
+      myo&=my&
+    UNTIL mk&=2
+    SPRITE test_sp$,1,1
+    ~GRAF_MOUSE(0,0)
+  CASE 2 ! muis
+    ~GRAF_MOUSE(255,V:test_sp$)
+    REPEAT
+      ~GRAF_MKSTATE(mx&,my&,mk&,k_state&)
+    UNTIL mk&=2
+    ~GRAF_MOUSE(0,0)
+  CASE 3 ! vulling
+    DEFFILL 1,test_sp$
+    ~FORM_DIAL(0,0,0,0,0,150,50,340,300)
+    ~FORM_DIAL(1,0,0,0,0,150,50,340,300)
+    PBOX 150,50,490,350
+    REPEAT
+      ~GRAF_MKSTATE(mx&,my&,mk&,k_state&)
+    UNTIL mk&=2
+    ~FORM_DIAL(2,0,0,0,0,150,50,340,300)
+    ~FORM_DIAL(3,0,0,0,0,150,50,340,300)
+  CASE 4 ! icon
+    GOSUB calc_sprite(t_adr%,26,ax|,ay|,t_spmask!,test_sp$,test_m$) ! block48x48:26
+    ~FORM_DIAL(0,0,0,0,0,256,136,128,128)
+    ~FORM_DIAL(1,0,0,0,0,256,136,128,128)
+    DEFFILL ,0,1
+    PBOX 256,136,320,264
+    DEFFILL 1,1,1
+    PBOX 320,136,384,264
+    PUT 264,144,test_sp$,7
+    PUT 328,144,test_m$,4
+    PUT 328,144,test_sp$,7
+    PUT 264,208,test_m$,7
+    PUT 264,208,test_sp$,4
+    PUT 328,208,test_sp$,4
+    REPEAT
+      ~GRAF_MKSTATE(mx&,my&,mk&,k_state&)
+    UNTIL mk&=2
+    ~FORM_DIAL(2,0,0,0,0,256,136,128,128)
+    ~FORM_DIAL(3,0,0,0,0,256,136,128,128)
+  DEFAULT ! block
+    ~GRAF_MOUSE(256,0)
+    BMOVE scherm1%,scherm2%,32000
+    ~XBIOS(5,L:scherm2%,L:-1,-1)
+    ~GRAF_MKSTATE(mx&,my&,mk&,k_state&)
+    GET mx&,my&,mx&+xt|*8-1,my&+yt|-1,test$
+    REPEAT
+      mxo&=mx&
+      myo&=my&
+      ~GRAF_MKSTATE(mx&,my&,mk&,k_state&)
+      mx&=MIN(mx&,639-xt|*8)
+      my&=MIN(my&,399-yt|)
+      IF mx&<>mxo& OR my&<>myo&
+        PUT mxo&,myo&,test$
+        GET mx&,my&,mx&+xt|*8-1,my&+yt|-1,test$
+        IF t_spmask!
+          PUT mx&,my&,test_m$,4
+        ENDIF
+        PUT mx&,my&,test_sp$,7
+        minx&=MIN(mx&,mxo&)
+        miny&=MIN(my&,myo&)
+        par%(0)=minx&
+        par%(1)=miny&
+        par%(2)=par%(0)+ABS(mx&-mxo&)+xt|*8
+        par%(3)=par%(1)+ABS(my&-myo&)+yt|
+        par%(4)=par%(0)
+        par%(5)=par%(1)
+        par%(6)=par%(2)
+        par%(7)=par%(3)
+        par%(8)=3
+        BITBLT mfdb2%(),mfdb1%(),par%()
+      ENDIF
+    UNTIL mk&=2
+    ~XBIOS(5,L:scherm1%,L:-1,-1)
+    mfdb2%(0)=scherm2%
+    PUT mx&,my&,test$
+    ~GRAF_MOUSE(257,0)
+  ENDSELECT
+  GOSUB show_info("")
+RETURN
+> PROCEDURE show_info(info$)
+  IF info$<>""
+    ~MENU_TNORMAL(menu_adr%,msg&(4),1)
+    ~MENU_BAR(menu_adr%,0)
+    BOUNDARY 0
+    DEFFILL 0,,
+    PBOX 0,0,640,17
+    TEXT 80*4-LEN(info$)*4,14,info$
+  ELSE
+    ~MENU_BAR(menu_adr%,1)
+    BOUNDARY 1
+    DEFFILL 1,,
+  ENDIF
+RETURN
+> PROCEDURE type_xy(type|,VAR x|,y|)
+  IF type|<5
+    x|=xt|(type|)
+    y|=yt|(type|)
+  ELSE
+    x|=bt|((type|-5) DIV 6) DIV 8
+    y|=bt|((type|-5) MOD 6)
+  ENDIF
+RETURN
+> PROCEDURE copyw1
+  ~WIND_GET(wind&(1),4,wx&,wy&,wb&,wh&)
+  ~WIND_UPDATE(1)
+  wb&=MIN(wb&,639-wx&)-1
+  wh&=MIN(wh&,399-wy&)-1
+  par%(0)=wx&
+  par%(1)=wy&
+  par%(2)=par%(0)+wb&
+  par%(3)=par%(1)+wh&
+  par%(4)=0
+  par%(5)=0
+  par%(6)=wb&
+  par%(7)=wh&
+  BITBLT mfdb1%(),mfdb3%(),par%()
+  ~WIND_UPDATE(0)
+RETURN
+> PROCEDURE calc_sprite(t_adr%,type|,mx|,my|,t_spmask!,VAR sprite$,spritem$)
+  GOSUB type_xy(type|,xt|,yt|)
+  SELECT type|
+  CASE 1  ! sprite
+    sprite$=MKI$(mx|)+MKI$(my|)+MKI$(0)+MKI$(0)+MKI$(1)
+    FOR i&=0 TO 15
+      sprite$=sprite$+MKI$(CARD{t_adr%+2*i&})+MKI$(CARD{t_adr%+32+2*i&})
+    NEXT i&
+  CASE 2  ! muis
+    sprite$=MKI$(mx|)+MKI$(my|)+MKI$(1)+MKI$(0)+MKI$(1)+SPACE$(64)
+    BMOVE t_adr%,V:sprite$+10,64
+  CASE 3  ! vulling
+    sprite$=SPACE$(32)
+    BMOVE t_adr%,V:sprite$,32
+  CASE 4  ! icon
+    sprite$=SPACE$(576)
+    BMOVE t_adr%,V:sprite$,576
+    '  CASE 5 TO 11  ! block
+  DEFAULT
+    sprite$=MKI$(xt|*8-1)+MKI$(yt|-1)+MKI$(1)+SPACE$(xt|*yt|)
+    BMOVE t_adr%+xt|*yt|,V:sprite$+LEN(sprite$)-xt|*yt|,xt|*yt|
+    IF t_spmask!
+      spritem$=MKI$(xt|*8-1)+MKI$(yt|-1)+MKI$(1)+SPACE$(xt|*yt|)
+      BMOVE t_adr%,V:spritem$+LEN(spritem$)-xt|*yt|,xt|*yt|
+    ENDIF
+  ENDSELECT
+RETURN
+> PROCEDURE prints(tekst$)
+  IF ty&>wy&+wh&
+    par%(0)=wx&
+    par%(1)=wy&+16
+    par%(2)=par%(0)+wb&
+    par%(3)=par%(1)+wh&-16
+    par%(4)=wx&
+    par%(5)=wy&
+    par%(6)=par%(4)+wb&
+    par%(7)=par%(5)+wh&-16
+    SWAP nul%,mfdb1%(0)
+    BITBLT mfdb1%(),mfdb1%(),par%()
+    SWAP nul%,mfdb1%(0)
+    BOUNDARY 0
+    DEFFILL 0,,
+    PBOX wx&,wy&+wh&-16,wx&+wb&,wy&+wh&
+    BOUNDARY 1
+    DEFFILL 1,,
+    ty&=ty&-16
+  ENDIF
+  TEXT 16,ty&+3,tekst$
+  ty&=ty&+16
+RETURN
+> PROCEDURE hex(n&,VAR hex$)
+  LOCAL x&
+  hex$=""
+  FOR x&=0 TO 3
+    n&=ROL&(n&,4)
+    IF (n& AND 15)<10
+      hex$=hex$+CHR$((n& AND 15)+ASC("0"))
+    ELSE
+      hex$=hex$+CHR$((n& AND 15)+ASC("A")-10)
+    ENDIF
+  NEXT x&
+RETURN
+> PROCEDURE foutje
+  ON ERROR GOSUB foutje
+  SELECT ERR
+  CASE 8
+    ~FORM_ALERT(1,"[1][Te weinig geheugen|aanwezig.|Gebruik zo min mogelijk|accessoires.][ OK ]")
+  CASE -13
+  CASE -33
+    ~FORM_ALERT(1,"[1][File niet gevonden][ OK ]")
+  CASE -34
+    ~FORM_ALERT(1,"[1][Folder niet gevonden][ OK ]")
+  CASE -36
+    ~FORM_ALERT(1,"[1][File onbereikbaar|(Disk vol of|disk write protected)][ OK ]")
+  CASE 103
+  DEFAULT
+    ~FORM_ALERT(1,"[1][Error nummer|"+STR$(ERR)+"][ OK ]")
+  ENDSELECT
+  GOSUB show_info("")
+  CLOSE
+  RESUME start
+RETURN
+'
+FUNCTION bitget(xi&,yi&,m|)
+  $ F%
+  LOCAL pixel&,bitn&,byten&,adr%
+  pixel&=xi&+8*xo|*yi&
+  bitn&=7-(pixel& MOD 8)
+  byten&=pixel& DIV 8
+  IF m|=0
+    adr%=wsp_adr%+byten&
+  ELSE
+    adr%=csp_adr%+byten&
+  ENDIF
+  RETURN -BTST(BYTE{adr%},bitn&)-BTST(BYTE{adr%+xo|*yo|},bitn&)
+ENDFUNC
