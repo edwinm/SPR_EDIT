@@ -8,17 +8,23 @@ sprite editor.
 So I started developing a sprite editor. I kept adding features and spend many evenings
 programming. I learned a lot about programming, GUI's and computers in general.
 
-At the end, in 1991, the [program](SPR_EDIT/SPREDITY.LST) grew to 1.463 lines of code. It supported masking,
+At the end, in 1991, the [program](SPR_EDIT/SPR_EDIT.LST) grew to 1.463 lines of code. It supported masking,
 auto masking, drawing lines and geometric figures, copy and pasting bitmaps and
-exporting to various output formats.
+exporting to the ICN format.
+It also included a [help file](SPR_EDIT/SPR_EDIT.HLP) which explains all the options.
 
 I planned to make it shareware. It would've been a great addition to the existing
 Atari ST icon/sprite editors. GFA Basic 3 provided a compiler, so I was exited to use that
 to generate a proper program. Unfortunately, the compiled code didn't work correctly
 and I lost interest.
 
+I created a [new release](https://github.com/edwinm/SPR_EDIT/releases/tag/v2.0)
+with a compiled executable and hopefully this one works fine.
+
 One other thing: the software is in Dutch. I don't know why I've never translated
 it to English, pretty much a requirement to publish software as shareware.
+I think I could've translated all menu options, but translating the help file
+was a step too far at that time.
 
 I release the software as open source. Go ahead and translate it to English,
 compile it, and maybe you will release it as shareware 32+ years later.
